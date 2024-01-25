@@ -20,67 +20,67 @@ jobs:
 
     Talisman:
       name: Talisman
-      uses: talisman.yaml
+      uses: ./talisman.yaml
       secrets: inherit
 
     Snyk:
       name: Snyk_security_check
-      uses: snyk.yaml
+      uses: ./snyk.yaml
       secrets: inherit
 
     Sbom:
       name: Sbom
-      uses: sbom.yaml
+      uses: ./sbom.yaml
       secrets: inherit
 
     KICS:
       name: KICS Scan
-      uses: kics.yaml
+      uses: ./kics.yaml
       secrets: inherit 
 
     TicTaac:
       name: TicTaac
-      uses: tictaac.yaml
+      uses: ./tictaac.yaml
       secrets: inherit 
     
     #Conftest:
     #  name: conftest
-    #  uses: conftest.yaml
+    #  uses: ./conftest.yaml
     #  secrets: inherit
 
     #Build: 
     #  needs: [Talisman,Snyk,Sbom,KICS,Conftest]
     #  name: Build
-    #  uses: Build.yaml
+    #  uses: ./Build.yaml
     #  secrets: inherit
 
     # Unit_Test:
     #   name: Unit Test
-    #   uses: UnitTest_reactJs.yaml
+    #   uses: ./UnitTest_reactJs.yaml
     #   secrets: inherit
 
     #Docker_build:
     #  needs: [Build]
     #  name: Docker build 
-    #  uses: docker-build.yaml
+    #  uses: ./docker-build.yaml
     #  secrets: inherit
 
     #clair_scan:
     #  needs: Docker_build
     #  name: clair
-    #  uses: clair_scan.yaml
+    #  uses: ./clair_scan.yaml
     #  secrets: inherit
 
     #Trivy:
     #  needs: [Docker_build]
     #  name: Trivy Scan
-    #  uses: trivy_Scan.yaml
+    #  uses: ./trivy_Scan.yaml
     # secrets: inherit
     
     #Deployment:
     #  needs: [Docker_build, Trivy]
     #  name: Deployment
-    #  uses: Deployment.yaml
+    #  uses: ./deployment.yaml
     #  secrets: inherit
       
     
