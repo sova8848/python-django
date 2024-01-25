@@ -1,0 +1,255 @@
+  
+stages:
+
+- stage: DefectDOJO
+  displayName: DefectDOJO
+  jobs:
+  - job: DefectDojo
+    displayName: DefectDojo
+    steps:  
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.x'
+        addToPath: true
+    - task: CmdLine@2
+      inputs:
+        script: |
+          python -m pip install --upgrade pip
+          pip install requests
+    - task: DownloadBuildArtifacts@1
+      displayName: SnykArtifact
+      inputs:
+          buildType: 'current'
+          downloadType: 'single'
+          artifactName: 'snyk_$(Build.BuildId)'
+          downloadPath: '$(Build.ArtifactStagingDirectory)'      
+    - task: DownloadBuildArtifacts@1
+      displayName: TalismanArtifact
+      inputs:
+          buildType: 'current'
+          downloadType: 'single'
+          artifactName: 'talisman_$(Build.BuildId)'
+          downloadPath: '$(Build.ArtifactStagingDirectory)'
+    - task: DownloadBuildArtifacts@1
+      displayName: SbomArtifact
+      inputs:
+          buildType: 'current'
+          downloadType: 'single'
+          artifactName: 'SBOM_$(Build.BuildId)'
+          downloadPath: '$(Build.ArtifactStagingDirectory)'
+    - task: CmdLine@2
+      inputs:
+        script: |
+                python - <<EOF    
+                import requests
+                import json
+                import getpass  
+                import os
+
+                import requests
+                from datetime import datetime, timedelta, timezone
+                import json
+
+                
+                def obtain_api_token(defectdojo_base_url, username, cred):
+                    url = f"{defectdojo_base_url}/api/v2/api-token-auth/"
+                    headers = {
+                        "accept": "application/json",
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    }
+                    data = {
+                        "username": username,
+                        "password": cred,
+                      }
+                
+                    response = requests.post(url, headers=headers, data=data)
+                
+                    if response.status_code == 200:
+                        token = response.json().get("token")
+                        return token
+                    else:
+                        print(f"Failed to obtain API token. Status code: {response.status_code}")
+                        print(response.text)
+                        return None
+                
+                def create_product(defectdojo_base_url, api_key, product_name):
+                    url = f"{defectdojo_base_url}/api/v2/products/"
+                    headers = {
+                        "Authorization": f"Token {api_key}",
+                        "Content-Type": "application/json",
+                    }
+                    data = {
+                        "name": product_name,
+                        "prod_type": 3, 
+                        "description": "product_name"
+                    }
+                
+                    response = requests.post(url, headers=headers, json=data)
+                
+                    if response.status_code == 201:
+                        print(f"Product '{product_name}' created successfully.")
+                        return response.json().get("id")
+                    else:
+                        print(f"Failed to create product. Status code: {response.status_code}")
+                        print(response.text)
+                        return None
+                
+                def check_product_exists(defectdojo_base_url, api_key, product_name):
+                    url = f"{defectdojo_base_url}/api/v2/products/"
+                    headers = {
+                        "Authorization": f"Token {api_key}",
+                        "Content-Type": "application/json",
+                    }
+                
+                    response = requests.get(url, headers=headers)
+                
+                    if response.status_code == 200:
+                        products = response.json().get("results", [])
+                        for product in products:
+                            if product["name"] == product_name:
+                                print(f"Products Already Exist. Status code: {response.status_code}")
+                                return True
+                        return False
+                    else:
+                        print(f"Failed to fetch products. Status code: {response.status_code}")
+                        print(response.text)
+                        return False
+                
+
+                def upload_scan(defectdojo_base_url, username,cred, scan_file_path, product_slug, engagement_name, scan_type,api_key):
+                
+                    #api_key = obtain_api_token(defectdojo_base_url, username, cred)
+                
+                    if api_key:
+                        print(f"API token obtained: {api_key}")
+                
+                        url = f"{defectdojo_base_url}/api/v2/import-scan/"
+                
+                        headers = {
+                            "Authorization": f"Token {api_key}",
+                        }
+                
+                        data = {
+                            "product_name": product_slug,
+                            "engagement_name": engagement_name,
+                            "scan_type": scan_type
+                        }
+                        #print("__________Before File read________________") 
+                        with open(scan_file_path, "rb") as file:
+                          
+                            files = {"file": (scan_file_path, file, "application/json")}
+
+                            print("__________Before File post____________")
+                            response = requests.post(url, headers=headers, data=data, files=files)
+                            print("__________Afer  post____________")
+                        if response.status_code == 201:
+                            print("Scan uploaded successfully.")
+                        else:
+                            print(f"Failed to upload scan. Status code: {response.status_code}")
+                            print("Full Respose =",response.text)
+                    else:
+                        print("Failed to obtain API token.")
+                        
+                def create_engagement(defectdojo_base_url, api_key, product_id, engagement_name):
+                  url = f"{defectdojo_base_url}/api/v2/engagements/"
+                  target_start = datetime.utcnow().strftime("%Y-%m-%d")
+                  target_end = (datetime.utcnow() + timedelta(weeks=2)).strftime("%Y-%m-%d")
+
+                  headers = {
+                      "Authorization": f"Token {api_key}",
+                      "Content-Type": "application/json"
+                  }
+                  data = {
+                      "product": product_id,
+                      "name": engagement_name,
+                      "deduplication_on_engagement":	True,
+                      "target_start": target_start,
+                      "target_end": target_end
+                  }
+              
+                  response = requests.post(url, headers=headers, json=data)
+              
+                  if response.status_code == 201:
+                      print(f"Engagement '{engagement_name}' created successfully.")
+                      return response.json().get("id")
+                  else:
+                      print(f"Failed to create engagement. Status code: {response.status_code}")
+                      print(response.text)
+                      return None
+              
+                def add_test_to_engagement(defectdojo_base_url, api_key, engagement_id, test_name, test_type):
+                  url = f"{defectdojo_base_url}/api/v2/tests/"
+                  target_start = datetime.utcnow().strftime("%Y-%m-%d")
+                  target_end = (datetime.utcnow() + timedelta(weeks=2)).strftime("%Y-%m-%d")
+                  headers = {
+                    "Authorization": f"Token {api_key}",
+                    "Content-Type": "application/json"
+                      }
+                  data = {
+                      "engagement": engagement_id,
+                      "name": test_name,
+                      "test_type": test_type,
+                      "target_start": target_start,
+                      "target_end": target_end
+                    
+                  }
+              
+                  response = requests.post(url, headers=headers, json=data)
+              
+                  if response.status_code == 201:
+                      print(f"Test '{test_name}' added to engagement successfully.")
+                  else:
+                      print(f"Failed to add test to engagement. Status code: {response.status_code}")
+                      print(response.text)
+                
+                if __name__ == "__main__":
+                    defectdojo_base_url = "https://demo.defectdojo.org"
+                    username = '$(username)' 
+                    cred = '$(cred)'
+                    product_slug = '$(product_slug)'
+                    product_name = '$(product_name)'
+                
+                    api_key = obtain_api_token(defectdojo_base_url, username, cred)
+                
+                    if api_key:
+                        print(f"API token obtained: {api_key}")
+                        product_exists = check_product_exists(defectdojo_base_url, api_key, product_name)
+          
+                        if not product_exists:
+                              product_id = create_product(defectdojo_base_url, api_key, product_name)
+                              print("----coffee_shop_id =",product_id)
+                              engagements = ["Snyk", "SBOM", "Talisman"]
+                              test_names = ["Snyk", "SBOM", "Talisman"]
+                              test_types = ["Snyk Scan", "CycloneDX Scan", "Talisman Scan"]
+                  
+                              for i in range(len(engagements)):
+                                engagement_id = create_engagement(defectdojo_base_url, api_key, product_id, engagements[i])
+                                if engagement_id:
+                                  print("engagement_id=",engagement_id)
+                                  #add_test_to_engagement(defectdojo_base_url, api_key, engagement_id, test_names[i], test_types[i])
+                        else:
+                            print("Failed to obtain API token.")
+
+
+                    engagement_names = ["Snyk", "Talisman", "SBOM"]
+                    scan_types = ["Snyk Scan", "Talisman Scan", "CycloneDX Scan"]
+                    scan_file_paths = [
+                        "$(Build.ArtifactStagingDirectory)/snyk_$(Build.BuildId)/snyk-report.json",
+                        "$(Build.ArtifactStagingDirectory)/talisman_$(Build.BuildId)/report.json",
+                        #"$(Build.ArtifactStagingDirectory)/SBOM_$(Build.BuildId)/CycloneDX-Sbom.json"
+                        "$(Build.ArtifactStagingDirectory)/SBOM_$(Build.BuildId)/_manifest/spdx_2.2/manifest.spdx.json"
+                    ]
+                
+                    for i in range(len(engagement_names)):
+                      print("__________________________________====____________________________________________",scan_file_paths[i])
+                      upload_scan(
+                          defectdojo_base_url,
+                          username,
+                          cred,
+                          scan_file_paths[i],
+                          product_slug,
+                          engagement_names[i],
+                          scan_types[i],
+                          api_key
+                      )
+                EOF

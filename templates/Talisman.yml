@@ -1,0 +1,36 @@
+parameters:
+  - name: Buildtype
+    type: string
+
+
+stages:
+
+- stage: Talisman_Scan
+  pool:
+   vmImage: 'ubuntu-latest'
+   
+  dependsOn: []
+  displayName: Talisman_Scan
+  jobs:
+  - job: TalismanCodeAnalysis
+    displayName: Talisman Code Analysis
+    steps:
+      - task: CmdLine@2
+        displayName: 'Talisman installation'
+        inputs:
+          script: |
+            wget https://github.com/thoughtworks/talisman/releases/latest/download/talisman_linux_amd64 -O talisman
+            chmod +x talisman
+            sudo mv talisman /usr/local/bin/
+            #chmod +x mvnw
+      - task: CmdLine@2
+        displayName: 'Talisman'
+        inputs:
+          script: |
+            talisman --scan
+        continueOnError: true
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: talisman_$(Build.BuildId)'
+        inputs:
+          PathtoPublish: '$(System.DefaultWorkingDirectory)/talisman_report/talisman_reports/data'
+          ArtifactName: 'talisman_$(Build.BuildId)'

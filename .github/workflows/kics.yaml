@@ -1,0 +1,22 @@
+name: KICS_Scan
+on:
+  workflow_dispatch:
+  workflow_call:
+   
+jobs:
+ KICS_Scan:
+  runs-on: ubuntu-latest
+  steps:
+      - name: run KICS Scan
+        uses: checkmarx/kics-github-action@v1.7.0
+        with:
+          # scanning two directories: ./terraform/ ./cfn-templates/ plus a single file
+          path: Dockerfile
+          output_path: myResults/
+        continue-on-error: true
+     
+      - name: Upload KICS JSON artifact
+        uses: actions/upload-artifact@v2
+        with:
+         name: "KICKS-results"
+         path: myResults

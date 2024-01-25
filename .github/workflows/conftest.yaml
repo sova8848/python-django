@@ -1,0 +1,61 @@
+name: conftest
+on:
+  workflow_call:
+jobs:
+  conftest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checking out source repo
+        uses: actions/checkout@v4.1.1
+        with:
+          repository: Expleo-France/DevSecOps
+          token: ${{ secrets.PAT_TOKEN }}
+      - name: clone private repos
+        uses: GuillaumeFalourd/clone-github-repo-action@v2.3
+        with:
+          owner: 'Expleo-France'
+          repository: 'Deployment'
+          access-token: ${{ secrets.PAT_TOKEN }}
+      - name: clone private repos
+        uses: GuillaumeFalourd/clone-github-repo-action@v2.3
+        with:
+          owner: 'Expleo-France'
+          repository: 'Conftest'
+          access-token: ${{ secrets.PAT_TOKEN }}
+      # - name: checking out conftest repo
+      #   uses: actions/checkout@v4.1.1
+      #   with:
+      #     repository: Expleo-France/Conftest
+      #     token: ${{ secrets.CONFTEST_PAT }}
+      # - name: checking out manifest repo
+      #   uses: actions/checkout@v4.1.1
+      #   with:
+      #     repository: Expleo-France/Deployment
+      #     token: ${{ secrets.NEW_PAT }}
+      - name: conftest
+        continue-on-error: true
+        run: |
+          LATEST_VERSION=$(wget -O - "https://api.github.com/repos/open-policy-agent/conftest/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | cut -c 2-)
+          ARCH=$(arch)
+          SYSTEM=$(uname)
+          echo $ARCH
+          echo $SYSTEM
+          wget "https://github.com/open-policy-agent/conftest/releases/download/v${LATEST_VERSION}/conftest_${LATEST_VERSION}_${SYSTEM}_${ARCH}.tar.gz"
+          tar -xvzf conftest_${LATEST_VERSION}_${SYSTEM}_${ARCH}.tar.gz
+          chmod +x conftest
+          ./conftest test -o json -p Conftest/docker.rego Dockerfile | cat > docker_conftest_report.json
+          cat docker_conftest_report.json
+          ./conftest test -o json -p Conftest/kubernetes.rego Deployment/dev/  | cat > kubernetes_conftest_report.json
+          cat kubernetes_conftest_report.json
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-conftest
+          path: docker_conftest_report.json
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kubernetes-conftest
+          path: kubernetes_conftest_report.json
+
+        

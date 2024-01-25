@@ -1,0 +1,59 @@
+---
+
+parameters:
+  - name: Buildtype
+    type: string
+
+
+stages:
+
+- stage: Build 
+  dependsOn: [Talisman_Scan]
+  displayName: Build And Test
+  jobs:
+  - job: BuildAndTestJob
+    displayName: Build And Test
+    dependsOn: []
+    steps:
+    - task: CmdLine@2
+      displayName: 'Install Application Requirements'
+      inputs:
+        script: 'pip install -r Application/requirements.txt'
+
+    # - task: CmdLine@2
+    #   displayName: 'Install pytest'
+    #   inputs:
+    #     script: 'pip install pytest && pytest Tests/unit_tests --junitxml=../TestResults/test-results.xml && pip install pycmd && py.cleanup Tests/'
+
+    - task: PublishTestResults@2
+      displayName: 'Test'
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/test-results.xml'
+        searchFolder: '$(Common.TestResultsDirectory)'
+
+    # - task: ArchiveFiles@2
+    #   displayName: 'Archive Application'
+    #   inputs:
+    #     rootFolderOrFile: '$(System.DefaultWorkingDirectory)/Application/'
+    #     includeRootFolder: false
+    #     archiveType: 'zip'
+    #     archiveFile: '$(Build.ArtifactStagingDirectory)/Application$(Build.BuildId).zip'
+    #     replaceExistingArchive: true
+
+    # - task: ArchiveFiles@2
+    #   displayName: 'Archive Test'
+    #   inputs:
+    #     rootFolderOrFile: '$(System.DefaultWorkingDirectory)/Tests/'
+    #     includeRootFolder: false
+    #     archiveType: 'zip'
+    #     archiveFile: '$(Build.ArtifactStagingDirectory)/Tests$(Build.BuildId).zip'
+    #     replaceExistingArchive: true
+
+    # - task: PublishBuildArtifacts@1
+    #   displayName: 'Publis Artifacts'
+    #   inputs:
+    #     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    #     ArtifactName: 'drop'
+    #     publishLocation: 'Container'
+        

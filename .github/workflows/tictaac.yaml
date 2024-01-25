@@ -1,0 +1,47 @@
+name: Run TicTaaC
+on: 
+  workflow_dispatch:
+  workflow_call:
+
+#on:
+ # push:
+  #  branches:
+   #   - tictaac
+    #  - dev
+      #- master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      #with:
+        # repository: Expleo-France/DevSecOps  
+         #ref: dev 
+         #token: ${{ secrets.PAT_TOKEN }}
+
+    - name: Download and unzip TicTaaC
+      run: |
+        wget -O tictaac.zip https://github.com/rusakovichma/TicTaaC/releases/latest/download/tic-taac-1.3.0-release.zip
+        unzip tictaac.zip -d tictaac
+    
+    - name: Install dos2unix
+      run: sudo apt-get install dos2unix
+
+
+    - name: Run TicTaaC and generate reports
+      run: |
+        mkdir reports
+        cd tictaac/tic-taac/bin
+        chmod +x *
+        dos2unix ./tic-taac.sh
+        ./tic-taac.sh --out /home/runner/work/DevSecOps/DevSecOps/reports --threatModel /home/runner/work/DevSecOps/DevSecOps/dataflowcodefile-tictaac/
+    
+        
+    - name: Upload Reports folder as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: Tic-Taac-reports
+        path: /home/runner/work/DevSecOps/DevSecOps/reports

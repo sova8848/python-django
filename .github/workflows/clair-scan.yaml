@@ -1,0 +1,25 @@
+name: clair
+on:
+  workflow_call:
+jobs:
+  clair_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: clair install
+        run: |
+          docker pull ${{ secrets.DOCKER_REPO_P }}:${{ github.run_number }}
+          wget -qO clair-scanner https://github.com/arminc/clair-scanner/releases/download/v8/clair-scanner_linux_amd64
+          chmod +x clair-scanner
+          docker run -p 5432:5432 -d --name db arminc/clair-db:latest
+          docker run -p 6060:6060 --link db:postgres -d --name clair arminc/clair-local-scan:latest
+          DOCKER_GATEWAY=$(docker network inspect bridge --format "{{range .IPAM.Config}}{{.Gateway}}{{end}}")
+          echo $DOCKER_GATEWAY
+          ./clair-scanner -r clair-report.json --ip $DOCKER_GATEWAY ${{ secrets.DOCKER_REPO_P }}:${{ github.run_number }} || exit 0
+          ls -la
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clair-${{ github.run_number }}
+          path: clair-report.json
+          
+                    

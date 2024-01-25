@@ -1,0 +1,14 @@
+variables:
+  onMainBranch: ${{ eq(variables['Build.SourceBranchName'], 'main') }}
+  System.Debug: 'true'
+  NETVersion: '4.8.1'
+  # Linux_pool: 'UFTONE'
+  # Windows_pool: 'UFTONE'
+  # mac_pool: 'UFTONE'
+  username: 'admin'
+  cred: '1Defectdojo@demo#appsec'
+  product_slug: 'CoffeeShop'
+  product_name: 'CoffeeShop'
+  pool: 'DataGuru'
+  #  demands: 
+  #  - Agent.Name -equals ubuntuagent

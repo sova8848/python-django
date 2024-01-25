@@ -1,0 +1,24 @@
+name: Sbom
+on:
+  workflow_dispatch:
+  workflow_call:
+  
+jobs:
+  Sbom:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+      #with:
+            #repository: Expleo-France/DevSecOps  
+            #ref: dev 
+            #token: ${{secrets.PAT_TOKEN }}  
+    - name: Generate SBOM
+      run: mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+
+    - name: Upload SBOM report to artifact
+      uses: actions/upload-artifact@v3
+      with:
+          #name: "Sbom-${{ github.run_number }}"
+          name: "Sbom"
+          path: target/CycloneDX-Sbom.json

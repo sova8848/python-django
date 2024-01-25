@@ -1,0 +1,85 @@
+name: Snyk
+on: 
+  workflow_dispatch:
+  workflow_call:
+     
+jobs: 
+  opensource-security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        #with:
+            #repository: Expleo-France/DevSecOps  
+            #ref: dev 
+            #token: ${{secrets.PAT_TOKEN }}  
+      - name: permission to mvnw
+        run: chmod +x mvnw
+      - name: Run Snyk to check for vulnerabilities
+        id: snyk-scan
+        uses: snyk/actions/maven@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_KEY }}
+        with:
+         args: --json-file-output=snyk-report.json
+     
+      - name: Upload json report to artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Snyk_report
+          path: snyk-report.json
+
+     
+
+    
+  code-security:
+    # needs: [ opensource-security ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+         token: ${{ secrets.PAT_TOKEN }}
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/maven@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_KEY }}
+        with:
+          command: code test
+          args: --json-file-output=snyk-report-code.json
+      
+      - name: Upload json report to artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Snyk_report
+          path: snyk-report-code.json
+      
+      # - name: List contents of Snyk report artifact
+      #   run: |
+      #     ls -R $GITHUB_WORKSPACE/snyk-report
+      #     #ls -R $GITHUB_WORKSPACE/Snyk report
+
+
+  # opensource-monitor:
+  #   needs: [ opensource-security, code-security ]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #        token: ${{ secrets.PAT_TOKEN }}
+  #     - name: permission to mvnw
+  #       run: chmod +x mvnw
+        
+  #     - name: Run Snyk to check for vulnerabilities
+  #       uses: snyk/actions/maven@master
+  #       env:
+  #         SNYK_TOKEN: ${{ secrets.SNYK_KEY}}
+  #       with:
+  #         command: monitor
+      #     args: --json-file-output=snyk-report-monitor.json
+      # - name: Upload json report to artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: Snyk report
+      #     path: snyk-report-monitor.json

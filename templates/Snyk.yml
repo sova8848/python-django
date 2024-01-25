@@ -1,0 +1,54 @@
+
+stages:
+
+- stage: Snyk_Scan
+  dependsOn: []
+  displayName: Snyk_Scan
+  jobs:
+  - job: SnykCodeAnalysis
+    displayName: Synk Code Analysis
+    steps:
+    - task: CmdLine@2
+      inputs:
+        #script: 'chmod +x mvnw'
+    - task: SnykSecurityScan@1
+      inputs:
+        serviceConnectionEndpoint: 'Snyk Connection'
+        testType: 'app'
+        severityThreshold: 'critical'
+        failOnIssues: ture
+        failOnThreshold: 'critical'
+        monitorWhen: 'always'
+
+
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '/home/vsts/work/_temp/'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+    - task: CmdLine@2
+      inputs:
+        script: |
+          cd $(Build.ArtifactStagingDirectory)
+          mv *.json snyk-report.json  
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: snyk_$(Build.BuildId)'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'snyk_$(Build.BuildId)'
+                
+    # - script: |
+    #     snyk test --severity-threshold=critical
+    #     if [ $? -ne 0 ]; then
+    #       echo "Critical vulnerabilities found. Failing the build."
+    #       exit 1
+    #     fi
+    #   displayName: 'Check for Critical Vulnerabilities'
+    
+
+ 
+ 
+
+

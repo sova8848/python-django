@@ -1,0 +1,45 @@
+trigger: none
+
+parameters:
+  - name: buildtype
+    displayName: "Application build type (default is release)"
+    type: string
+    default: debug
+
+variables:
+- template: app-var-template.yml
+  #######################
+  ##  GLOBAL VARIABLES ##
+  #######################
+  # onMainBranch: ${{ eq(variables['Build.SourceBranchName'], 'main') }}
+  # System.Debug: 'true'
+  # NETVersion: '4.8.1'
+  # Linux_pool: 'Default'
+  # Windows_pool: 'Default'
+  # mac_pool: 'Default'
+  ########################
+  ##   APP & AGENT VARIABLES    ####
+  ########################
+  # Variable Template reference
+
+stages:
+
+  - template: Build_Test.yml # stage template reference
+    parameters:
+      Buildtype: $(buildtype)
+
+  - template: Sbom.yml # stage template reference
+    parameters:
+      Buildtype: $(buildtype)      
+
+  - template: Snyk.yml # stage template reference
+    parameters:
+      Buildtype: $(buildtype)   
+
+  - template: Talisman.yml # stage template reference
+    parameters:
+      Buildtype: $(buildtype)    
+
+  - template: DefectDojo.yml # stage template reference
+    parameters:
+      Buildtype: $(buildtype)

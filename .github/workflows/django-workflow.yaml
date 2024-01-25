@@ -1,0 +1,95 @@
+name: Django-workflow 
+on:
+  workflow_dispatch: 
+  push:
+    branches:
+      - main
+      
+
+env: 
+  REPO_NAME: ${{ github.repository }}
+
+permissions: 
+    checks: write
+    security-events: write
+    packages: write
+    actions: write
+    pull-requests: write
+    
+jobs:
+
+    Talisman:
+      name: Talisman
+      uses: sova8848/python-django/.github/workflows/talisman.yaml
+      secrets: inherit
+
+    Snyk:
+      name: Snyk_security_check
+      uses: sova8848/python-django/.github/workflows/snyk.yaml
+      secrets: inherit
+
+    Sbom:
+      name: Sbom
+      uses: sova8848/python-django/.github/workflows/sbom.yaml
+      secrets: inherit
+
+    KICS:
+      name: KICS Scan
+      uses: sova8848/python-django/.github/workflows/kics.yaml
+      secrets: inherit 
+
+    TicTaac:
+      name: TicTaac
+      uses: sova8848/python-django/.github/workflows/tictaac.yaml
+      secrets: inherit 
+    
+    #Conftest:
+    #  name: conftest
+    #  uses: sova8848/python-django/.github/workflows/conftest.yaml
+    #  secrets: inherit
+
+    #Build: 
+    #  needs: [Talisman,Snyk,Sbom,KICS,Conftest]
+    #  name: Build
+    #  uses: sova8848/python-django/.github/workflows/Build.yaml
+    #  secrets: inherit
+
+    # Unit_Test:
+    #   name: Unit Test
+    #   uses: sova8848/python-django/.github/workflows/UnitTest_reactJs.yaml
+    #   secrets: inherit
+
+    #Docker_build:
+    #  needs: [Build]
+    #  name: Docker build 
+    #  uses: sova8848/python-django/.github/workflows/docker-build.yaml
+    #  secrets: inherit
+
+    #clair_scan:
+    #  needs: Docker_build
+    #  name: clair
+    #  uses: sova8848/python-django/.github/workflows/clair_scan.yaml
+    #  secrets: inherit
+
+    #Trivy:
+    #  needs: [Docker_build]
+    #  name: Trivy Scan
+    #  uses: sova8848/python-django/.github/workflows/trivy_Scan.yaml
+    # secrets: inherit
+    
+    #Deployment:
+    #  needs: [Docker_build, Trivy]
+    #  name: Deployment
+    #  uses: sova8848/python-django/.github/workflows/Deployment.yaml
+    #  secrets: inherit
+      
+    
+
+
+
+
+
+
+
+  
+     

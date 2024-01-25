@@ -1,0 +1,31 @@
+name: Trivy
+on:
+  workflow_dispatch:
+  workflow_call:
+   
+jobs:
+ Trivy_Scan:
+  runs-on: ubuntu-latest
+  steps:
+      - name: Run Trivy vulnerability scanner
+        id: trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'docker.io/${{ secrets.DOCKER_REPO_P }}:${{ github.run_number }}'
+          format: 'json'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH' 
+        continue-on-error: true
+        
+      - name: Save Trivy JSON output
+        run: |
+         echo "${{ steps.trivy.outputs.results }}" > trivy-results.json
+         echo "Outcome of Step 1: ${{ steps.trivy.outcome }}"
+      - name: Upload Trivy JSON artifact
+        uses: actions/upload-artifact@v2
+        with:
+         name: trivy-results
+         path: trivy-results.json
+     
