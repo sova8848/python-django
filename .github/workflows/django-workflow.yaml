@@ -20,7 +20,7 @@ jobs:
 
     Talisman:
       name: Talisman
-      uses: ./.github/workflows//talisman.yaml
+      uses: ./.github/workflows/talisman.yaml
       secrets: inherit
 
     Snyk:
